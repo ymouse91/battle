@@ -1,0 +1,1852 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1220" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="icon" sizes="192x192" href="./icon192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./icon192.png">
+  <link rel="manifest" href="manifest.webmanifest">												   
+  <title>Battle Sheeps (PC/iPad) – prototype</title>
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#101a2e;
+      --panel2:#0f1730;
+      --text:#eaf0ff;
+      --muted:#a9b6d6;
+      --accent:#6ee7ff;
+      --good:#7CFF8A;
+      --warn:#ffd36e;
+      --bad:#ff6e6e;
+      --hexFill:#86c95f;
+      --hexEdge:#2b3a2f;
+      --hexDot:#f7fbff;
+      --shadow: rgba(0,0,0,.35);
+	  --vh: 1vh;			 
+    }
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html,body{ overscroll-behavior: none; }
+    /* Prevent accidental text selection during gameplay; inputs still work */
+    .btn, .boardCard, .uiOverlay{ -webkit-user-select:none; user-select:none; }
+    html,body{ height:100%; margin:0; color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    button,input{ font:inherit; }
+    .app{
+      min-height: calc(var(--vh) * 100);
+      display:flex;
+      flex-direction:column;
+      padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      gap:10px;
+	  background:radial-gradient(1200px 600px at 25% 10%, #172a44 0%, var(--bg) 55%, #06080d 100%);																								
+    }
+    header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:10px 12px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      box-shadow:0 10px 25px var(--shadow);
+    }
+    header .title{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    header h1{ margin:0; font-size:18px; letter-spacing:.3px; }
+    header .sub{ color:var(--muted); font-size:12px; }
+    header .right{
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .pill{
+      padding:6px 10px; border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .pill strong{ color:var(--text); font-weight:650; }
+
+    main{
+      flex:1;
+      display:grid;
+      grid-template-columns: 1fr 330px;
+      gap:10px;
+      align-items:stretch;
+    }
+    @media (max-width: 980px){
+      main{ grid-template-columns: 1fr; }
+    }
+
+    .boardCard{
+      position:relative;
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      box-shadow:0 14px 30px var(--shadow);
+      overflow:hidden;
+      min-height: 420px;
+    
+      touch-action:none;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    canvas{
+      width:100%;
+      display:block;
+      touch-action: none; /* prevent iPad page pan/zoom on the board */
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+    }
+    #cv{ height:100%; }
+    .hintOverlay{
+      position:absolute; left:10px; right:10px; bottom:10px;
+      display:flex; gap:10px; flex-wrap:wrap;
+      pointer-events:none;
+    }
+    .hint{
+      pointer-events:none;
+      padding:8px 10px;
+      border-radius:12px;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+      color:#eaf0ff;
+      font-size:12px;
+      max-width: 640px;
+    }
+
+    .side{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      box-shadow:0 14px 30px var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height: 420px;
+    }
+    .sideHeader{
+      padding:12px 12px 8px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .sideHeader h2{ margin:0; font-size:14px; letter-spacing:.2px; }
+    .sideHeader .small{ color:var(--muted); font-size:12px; }
+    .sideBody{ padding:12px; display:flex; flex-direction:column; gap:10px; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .btn{
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      color:var(--text);
+      cursor:pointer;
+      transition: transform .05s ease, background .15s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background:rgba(110,231,255,.16);
+      border-color: rgba(110,231,255,.35);
+    }
+    .btn.danger{
+      background:rgba(255,110,110,.14);
+      border-color: rgba(255,110,110,.35);
+    }
+    .btn:disabled{
+      opacity:.45; cursor:not-allowed;
+    }
+
+    .status{
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+      white-space:pre-line;
+    }
+
+    #tilePreviewWrap{ margin-bottom: 10px;  display:block; padding-bottom:8px; }
+  #tilePreviewWrap canvas{ width:100%; height:auto !important; aspect-ratio: 260 / 140; display:block; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); }
+  #tilePreviewWrap .status{ margin-top:8px; }
+
+  .playerList{
+      display:flex; flex-direction:column; gap:8px;
+    }
+    .playerItem{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+    }
+    .playerLeft{ display:flex; align-items:center; gap:10px; min-width:0;}
+    .dot{
+      width:14px; height:14px; border-radius:999px; flex:0 0 auto;
+      border:1px solid rgba(0,0,0,.35);
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+    .pName{ font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pMeta{ color:var(--muted); font-size:12px; }
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modalBack.show{ display:flex; }
+    .modal{
+      width:min(720px, 100%);
+      background:linear-gradient(180deg, rgba(20,28,52,.98), rgba(10,14,26,.98));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modalHeader{
+      padding:12px 14px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      gap:10px;
+    }
+    .modalHeader h3{ margin:0; font-size:15px; }
+    .modalBody{
+      padding:14px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 700px){
+      .grid2{ grid-template-columns: 1fr; }
+    }
+    .field{
+      display:flex; flex-direction:column; gap:6px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+    }
+    .field label{ font-size:12px; color:var(--muted); }
+    .field input{
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(0,0,0,.25);
+      color:var(--text);
+      outline:none;
+    }
+    .field input:focus{
+      border-color: rgba(110,231,255,.5);
+      box-shadow: 0 0 0 3px rgba(110,231,255,.12);
+    }
+    .note{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:10px;
+    }
+  
+.boardCard{ position:relative; }
+.uiOverlay{
+  position:absolute;
+  left:0; top:0; right:0; bottom:0;
+  pointer-events:none;
+}
+.splitCtrl{
+  position:absolute;
+  transform:translate(-50%, 0);
+  padding:6px 8px;
+  border-radius:10px;
+  background:rgba(20,24,30,.88);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
+  pointer-events:auto;
+  width:170px;
+}
+.splitCtrl .row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  opacity:.95;
+  margin-bottom:4px;
+  gap:8px;
+  white-space:nowrap;
+}
+.splitCtrl input[type="range"]{ width:100%; }
+
+.playerItem{
+  border: 2px solid transparent;
+  border-radius: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.playerItem.active{
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title">
+      <h1>Battle Sheeps</h1>
+      <div class="sub" id="todayLine"></div>
+    </div>
+    <div class="right">
+      <div class="pill"><strong>Vaihe:</strong> <span id="phasePill">—</span></div>
+      <button class="btn primary" id="btnSetup">Uusi peli</button>
+      <button class="btn" id="btnReset" style="display:none">Nollaa</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="boardCard">
+      <canvas id="cv"></canvas>
+      <div id="uiOverlay" class="uiOverlay"></div>
+      <div class="hintOverlay" style="display:none">
+        <div class="hint" id="hintText">—</div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="sideHeader">
+        <h2>Tilanne</h2>
+        <div class="small" id="smallInfo">PC/iPad</div>
+      </div>
+      <div class="sideBody">
+
+
+        <div class="row" style="display:none">
+          <button class="btn primary" id="btnBuildManual" disabled>Rakennustila</button>
+          <button class="btn" id="btnFinishBoard" disabled>Valmis lauta</button>
+          <button class="btn" id="btnStartPlacement" disabled>Aloitusasetus</button>
+        </div>
+
+        <div class="playerList" id="buildControls">
+      <div class="status" style="display:none">Laatta (sama kaikille) – kierrä ja aseta</div>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <canvas id="tilePreview" width="140" height="120" style="background:rgba(0,0,0,.15); border:1px solid rgba(255,255,255,.12); border-radius:12px;"></canvas>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="status" id="tileInfo" style="display:none;">Klikkaa miniatyyriä: kierto 0°</div>
+          <div class="status" id="tileRemaining" style="display:none;">Laattoja asetettu: —</div>
+          <div class="status" style="display:none">Klikkaa miniatyyriä: kierrä. Klikkaa laudalla: aseta. Klikkaa asetettua aluetta: poista.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="playerList" id="playerList"></div>
+        <div class="status" id="statusBox">Aloita “Pelaajat”.</div>
+        <div class="note" style="display:none">
+          Rakennustilassa asetat samanlaiset laatat käsin (2p=8, 3p=12, 4p=16). “Valmis lauta” aktivoituu vasta kun kaikki laatat on asetettu ja pelilauta on yhtenäinen (ei saarekkeita).
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- Setup modal -->
+<div class="modalBack" id="modalBack">
+  <div class="modal">
+    <div class="modalHeader">
+      <h3>Pelaajat (2–4)</h3>
+      <button class="btn" id="btnCloseModal">Sulje</button>
+    </div>
+    <div class="modalBody">
+      <div class="grid2">
+        <div class="field">
+          <label>Pelaaja 1</label>
+          <input id="p1" placeholder="nimi" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Pelaaja 2</label>
+          <input id="p2" placeholder="nimi" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Pelaaja 3 (valinnainen)</label>
+          <input id="p3" placeholder="nimi (tyhjä = ei)" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Pelaaja 4 (valinnainen)</label>
+          <input id="p4" placeholder="nimi (tyhjä = ei)" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button class="btn primary" id="btnSavePlayers">Tallenna</button>
+        <button class="btn danger" id="btnClearPlayers">Tyhjennä</button>
+      </div>
+
+      <div class="note">
+        Tyhjä nimi lopettaa listan. Minimi 2 pelaajaa.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   Battle Sheeps – prototype (Phase 1–3)
+   - players (names)
+   - build board from 16 identical tiles (auto layout)
+   - starting placement on perimeter, only on player's tiles
+===================================================== */
+
+(function(){
+  // ---------- Date line ----------
+  const todayLine = document.getElementById("todayLine");
+  (function setDateLine(){
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+    todayLine.textContent = `📅 ${dd}.${mm}.${yyyy}`;
+  })();
+
+  // ---------- DOM ----------
+  const cv = document.getElementById("cv");
+  const uiOverlay = document.getElementById("uiOverlay");
+  const ctx = cv.getContext("2d");
+  const phasePill = document.getElementById("phasePill");
+  const hintText = document.getElementById("hintText");
+  const statusBox = document.getElementById("statusBox");
+  const playerList = document.getElementById("playerList");
+
+  const btnSetup = document.getElementById("btnSetup");
+  const btnReset = document.getElementById("btnReset");
+  const btnBuildManual = document.getElementById("btnBuildManual");
+  const btnFinishBoard = document.getElementById("btnFinishBoard");
+  const btnStartPlacement = document.getElementById("btnStartPlacement");
+  
+  const tilePreviewWrap = document.getElementById("tilePreviewWrap");
+const buildControls = document.getElementById("buildControls");
+  const tilePreview = document.getElementById("tilePreview");
+const tileInfo = document.getElementById("tileInfo");
+  const tileRemaining = document.getElementById("tileRemaining");
+
+  // modal
+  const modalBack = document.getElementById("modalBack");
+  const btnCloseModal = document.getElementById("btnCloseModal");
+  const btnSavePlayers = document.getElementById("btnSavePlayers");
+  const btnClearPlayers = document.getElementById("btnClearPlayers");
+  const p1 = document.getElementById("p1");
+  const p2 = document.getElementById("p2");
+  const p3 = document.getElementById("p3");
+  const p4 = document.getElementById("p4");
+
+  // ---------- Game state ----------
+  const COLORS = [
+    { id:"red",   name:"Punainen", hex:"#ff5858" },
+    { id:"blue",  name:"Sininen",  hex:"#56b0ff" },
+    { id:"green", name:"Vihreä",   hex:"#59ff9a" },
+    { id:"black", name:"Musta",    hex:"#bfc7d6" } // näkyvä “musta” (ei liian tumma)
+  ];
+
+  const PHASE = {
+    NEED_PLAYERS: "Pelaajat",
+    NEED_BUILD: "Lauta",
+    BUILD_MANUAL: "Rakennus",
+    START_PLACEMENT: "Aloitusasetus",
+    READY_TO_PLAY: "Peli voi alkaa",
+	PLAY: "Peli"
+  };
+
+  let state = {
+    phase: PHASE.NEED_PLAYERS,
+    gameOver: false,
+    gameOverMsg: "",
+    players: [], // {id, name, colorId, colorHex, tileIds:[...]}
+    tiles: [],   // 16 tiles: {id, origin:{q,r}, cells:[{q,r}], ownerPid}
+    hexes: new Map(), // key -> {q,r, tileId, ownerPid, stack:null|{pid,count}}
+    perimeterKeys: new Set(),
+    currentPlacerPid: 0,
+    build: { rotSteps: 0, hoverAxial: null, remainingTiles: 16, nextTileId: 0, placedTiles: [] }
+  };
+
+  // ---------- Hex math (axial) ----------
+  // pointy-top axial to pixel
+  function axialToPixel(q,r, size){
+    // flat-top axial
+    const x = size * (3/2 * q);
+    const y = size * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
+    return {x,y};
+  }
+  function pixelToAxialApprox(x,y,size){
+    // inverse for flat-top
+    const q = (2/3 * x) / size;
+    const r = (-1/3 * x + Math.sqrt(3)/3 * y) / size;
+    return axialRound(q,r);
+  }
+  function axialRound(q,r){
+    let x = q;
+    let z = r;
+    let y = -x - z;
+
+    let rx = Math.round(x);
+    let ry = Math.round(y);
+    let rz = Math.round(z);
+
+    const x_diff = Math.abs(rx - x);
+    const y_diff = Math.abs(ry - y);
+    const z_diff = Math.abs(rz - z);
+
+    if (x_diff > y_diff && x_diff > z_diff) rx = -ry - rz;
+    else if (y_diff > z_diff) ry = -rx - rz;
+    else rz = -rx - ry;
+
+    return { q: rx, r: rz };
+  }
+  function keyOf(q,r){ return q + "," + r; }
+
+  const DIRS = [
+    {q:+1,r:0}, {q:+1,r:-1}, {q:0,r:-1},
+    {q:-1,r:0}, {q:-1,r:+1}, {q:0,r:+1}
+  ];
+  function neighbors(q,r){
+    return DIRS.map(d=>({q:q+d.q, r:r+d.r}));
+  }
+
+  // ---------- Board/Tiles model ----------
+  // Your image shows a 4-hex tile (tetromino-like). We'll use a 4-hex shape:
+  //   (0,0), (1,0), (0,1), (-1,1) in axial -> a gentle “bent strip”.
+  // All 16 tiles identical; this is just the prototype. Later we can match exact tile geometry if needed.
+  const TILE_CELLS = [
+    {q:0,r:0},
+    {q:1,r:0},
+    {q:0,r:1},
+    {q:-1,r:1}
+  ];
+
+  // ---------- Manual board building ----------
+// 16 identical tiles. You have ONE tile preview that you can rotate, then place by clicking.
+// Board is valid when 16 tiles are placed AND all hexes are connected (no islands).
+
+function rotateAxial(q,r, stepsCW){
+  // axial (q,r) -> cube (x=q, z=r, y=-x-z)
+  let x = q, z = r, y = -x - z;
+  let n = ((stepsCW%6)+6)%6;
+  while(n--){
+    // 60° clockwise: (x,y,z) -> (-z,-x,-y)
+    const nx = -z;
+    const ny = -x;
+    const nz = -y;
+    x = nx; y = ny; z = nz;
+  }
+  return {q:x, r:z};
+}
+
+
+function rotateAxial60(q,r,steps){
+  let x=q, z=r, y=-x-z;
+  const n = ((steps%6)+6)%6;
+  for(let i=0;i<n;i++){
+    const nx = -z;
+    const ny = -x;
+    const nz = -y;
+    x = nx; y = ny; z = nz;
+  }
+  return {q:x, r:z};
+}
+
+
+function strokeHex(cx, cy, size, ctxRef){
+  const ctx2 = ctxRef || ctx;
+  const pts = hexCorners(cx, cy, size); // sama geometria kuin drawHex()
+
+  ctx2.beginPath();
+  ctx2.moveTo(pts[0].x, pts[0].y);
+  for(let i=1;i<6;i++) ctx2.lineTo(pts[i].x, pts[i].y);
+  ctx2.closePath();
+  ctx2.stroke();
+}
+
+
+function drawHexOn(ctx2, cx, cy, size, fill, stroke, lineW){
+  const a = Math.PI/3;
+  ctx2.beginPath();
+  for(let i=0;i<6;i++){
+    const ang = a*i;
+    const x = cx + size*Math.cos(ang);
+    const y = cy + size*Math.sin(ang);
+    if(i===0) ctx2.moveTo(x,y); else ctx2.lineTo(x,y);
+  }
+  ctx2.closePath();
+  if(fill){ ctx2.fillStyle = fill; ctx2.fill(); }
+  if(stroke){ ctx2.lineWidth = lineW||1; ctx2.strokeStyle = stroke; ctx2.stroke(); }
+}
+
+function tileCellsAt(originQ, originR, rotSteps){
+  return TILE_CELLS.map(c=>{
+    const rr = rotateAxial(c.q, c.r, rotSteps);
+    return { q: originQ + rr.q, r: originR + rr.r };
+  });
+}
+
+
+
+function placedTileCount(){
+  const total = (state.build && state.build.totalTiles) ? state.build.totalTiles : Math.min(16, Math.max(8, (state.players.length||0)*4));
+  if(state && state.build && typeof state.build.remainingTiles === "number"){
+    return total - state.build.remainingTiles;
+  }
+  if(state && Array.isArray(state.build?.placedTiles)){
+    return state.build.placedTiles.length;
+  }
+  if(state && Array.isArray(state.tiles)){
+    let n = 0;
+    for(const t of state.tiles) if(t && t.placed) n++;
+    return n;
+  }
+  return 0;
+}
+
+
+function drawTilePreview(){
+  if(!tilePreview) return;
+  const ctxP = tilePreview.getContext("2d");
+  const w = tilePreview.width, h = tilePreview.height;
+  ctxP.clearRect(0,0,w,h);
+
+  // Small preview hex size
+  const size = 18;
+  const ox = w/2;
+  const oy = h/2 + 6;
+
+  // Use tile offsets around (0,0) with current rotation
+  const rot = state.build.rotSteps || 0;
+  const cells = tileCellsAt(0,0,rot);
+
+  // center bounds
+  let minx=1e9, maxx=-1e9, miny=1e9, maxy=-1e9;
+  for(const hc of cells){
+    const p = axialToPixel(hc.q, hc.r, size);
+    minx=Math.min(minx, p.x); maxx=Math.max(maxx, p.x);
+    miny=Math.min(miny, p.y); maxy=Math.max(maxy, p.y);
+  }
+  const cx = (minx+maxx)/2;
+  const cy = (miny+maxy)/2;
+
+  for(const hc of cells){
+    const p = axialToPixel(hc.q, hc.r, size);
+    const x = ox + (p.x - cx);
+    const y = oy + (p.y - cy);
+    drawHex(x,y,size, "rgba(134,201,95,.95)", "rgba(20,30,22,.92)", 1, ctxP);
+
+    // tiny "grass" mark
+    ctxP.save();
+    ctxP.translate(x,y);
+    ctxP.fillStyle="rgba(255,255,255,.65)";
+    ctxP.beginPath();
+    ctxP.moveTo(-2,1); ctxP.lineTo(2,-1); ctxP.lineTo(0,3);
+    ctxP.closePath();
+    ctxP.fill();
+    ctxP.restore();
+  }
+
+  if(tileInfo){
+    tileInfo.textContent = `Klikkaa miniatyyriä: kierto ${(rot*60)%360}°`;
+  }
+if(tileRemaining){
+  const total =
+    (state.build && state.build.totalTiles)
+      ? state.build.totalTiles
+      : Math.min(16, Math.max(8, (state.players.length||0)*4));
+
+  const placed = state.build?.placedTiles?.length || 0;
+
+  tileRemaining.textContent =
+    `Laattoja asetettu: ${placed}/${total}`;
+}
+
+
+}
+
+
+function buildBoardManualInit(){
+  state.gameOver = false;
+  state.gameOverMsg = "";
+
+  state.hexes = new Map();
+  state.perimeterKeys = new Set();
+  state.currentPlacerPid = 0;
+
+  state.build.rotSteps = 0;
+  // Show ghost tile immediately when build starts
+  state.build.hoverAxial = { q: 0, r: 0 };
+  state.build.totalTiles = state.build.totalTiles || Math.min(16, Math.max(8, (state.players.length||0)*4));
+  state.build.remainingTiles = state.build.totalTiles;
+  state.build.nextTileId = 0;
+  state.build.placedTiles = [];
+
+
+  setPhase(PHASE.BUILD_MANUAL);
+  updateBuildStatus();
+  render();
+
+  resizeCanvas();
+}
+
+function canPlaceTileAt(originQ, originR, rotSteps){
+  const cells = tileCellsAt(originQ, originR, rotSteps);
+
+  // no overlap
+  for(const hc of cells){
+    if(state.hexes.has(keyOf(hc.q,hc.r))) return { ok:false, reason:"Päällekkäisyys", cells:null };
+  }
+
+  // After the first tile, every new tile must touch the existing board by an EDGE (hex-neighbor).
+  if(state.hexes.size > 0){
+    let touches = false;
+    for(const hc of cells){
+      for(const d of DIRS){
+        if(state.hexes.has(keyOf(hc.q + d.q, hc.r + d.r))){ touches = true; break; }
+      }
+      if(touches) break;
+    }
+    if(!touches) return { ok:false, reason:"Laatan pitää koskea olemassa olevaa lautaa sivusta (ei vain kulmasta).", cells:null };
+  }
+
+  return { ok:true, reason:"", cells };
+}
+
+function placeCurrentTileAt(originQ, originR){
+  if(state.build.remainingTiles <= 0){
+    flashStatus("Kaikki laatat on jo asetettu.", "warn");
+    return false;
+  }
+
+  const rot = state.build.rotSteps;
+  const chk = canPlaceTileAt(originQ, originR, rot);
+  if(!chk.ok){
+    flashStatus(chk.reason, "warn");
+    return false;
+  }
+
+  const tileId = state.build.nextTileId++;
+  const placedIndex = state.build.placedTiles.length; // 0..15
+
+  const tile = { id:tileId, origin:{q:originQ, r:originR}, rotSteps:rot, cells:chk.cells, placedIndex };
+  state.build.placedTiles.push(tile);
+  state.build.remainingTiles--;
+
+  for(const hc of tile.cells){
+    const k = keyOf(hc.q, hc.r);
+    state.hexes.set(k, { q:hc.q, r:hc.r, tileId:tileId, ownerPid:null, stack:null });
+  }
+
+  computePerimeter();
+  updateBuildStatus();
+  render();
+
+  // Auto-advance: if board is complete and connected, finish immediately
+  finishBoardAndStartPlacement();
+  return true;
+}
+
+function removeTileById(tileId){
+  const idx = state.build.placedTiles.findIndex(t=>t.id === tileId);
+  if(idx < 0) return false;
+  const tile = state.build.placedTiles[idx];
+
+  for(const hc of tile.cells){
+    state.hexes.delete(keyOf(hc.q,hc.r));
+  }
+
+  state.build.placedTiles.splice(idx,1);
+  state.build.remainingTiles++;
+
+  // keep placedIndex stable? not needed after build; but keep order for ownership by placement:
+  // Recompute placedIndex so first placed is 0, etc.
+  for(let i=0;i<state.build.placedTiles.length;i++){
+    state.build.placedTiles[i].placedIndex = i;
+  }
+
+  computePerimeter();
+  updateBuildStatus();
+  render();
+  return true;
+}
+
+function updateActivePlayerUI(){
+  let activePid = -1;
+
+  if(state.phase === PHASE.START_PLACEMENT){
+    activePid = state.currentPlacerPid;
+  }else if(state.phase === PHASE.PLAY){
+    activePid = state.turnPid;
+  }
+
+  document.querySelectorAll(".playerItem").forEach((el, i)=>{
+    el.classList.toggle("active", i === activePid);
+  });
+}
+
+function computeConnectedSet(){
+  if(state.hexes.size === 0) return new Set();
+  const keys = Array.from(state.hexes.keys());
+  const start = keys[0];
+  const seen = new Set([start]);
+  const st = [start];
+
+  while(st.length){
+    const k = st.pop();
+    const hx = state.hexes.get(k);
+    for(const nb of neighbors(hx.q,hx.r)){
+      const nk = keyOf(nb.q,nb.r);
+      if(state.hexes.has(nk) && !seen.has(nk)){
+        seen.add(nk);
+        st.push(nk);
+      }
+    }
+  }
+  return seen;
+}
+
+function isBoardConnected(){
+  const seen = computeConnectedSet();
+  return seen.size === state.hexes.size && seen.size>0;
+}
+
+
+function updateBuildStatus(){
+  const total = (state.build && state.build.totalTiles)
+    ? state.build.totalTiles
+    : Math.min(16, Math.max(8, (state.players.length||0) * 4));
+
+  const remaining = (state.build && typeof state.build.remainingTiles === "number")
+    ? state.build.remainingTiles
+    : total;
+
+  const placed = total - remaining;
+
+  const connected = isBoardConnected();
+  const allPlaced = (placed === total);
+
+  btnFinishBoard.disabled = !(allPlaced && connected);
+
+  statusBox.textContent =
+    `Rakennustila\n` +
+    `Laattoja asetettu: ${placed}/${total}\n` +
+    (connected ? "Yhtenäinen: OK\n" : "Yhtenäinen: EI (saareke) — laatan pitää koskea sivusta\n") +
+    (allPlaced ? "Kaikki laatat asetettu.\n" : "Aseta kaikki laatat.\n") +
+    `Klikkaa miniatyyriä: kierto. Klikkaa laudalla: aseta. Klikkaa asetettua aluetta: poista.`;
+}
+
+function drawHexWithCtx(ctxX,cx,cy,size, fill, stroke, alpha=1){
+  const pts = hexCorners(cx,cy,size);
+  ctxX.globalAlpha = alpha;
+  ctxX.beginPath();
+  ctxX.moveTo(pts[0].x, pts[0].y);
+  for(let i=1;i<6;i++) ctxX.lineTo(pts[i].x, pts[i].y);
+  ctxX.closePath();
+  ctxX.fillStyle = fill;
+  ctxX.fill();
+  ctxX.lineWidth = 2;
+  ctxX.strokeStyle = stroke;
+  ctxX.stroke();
+  ctxX.globalAlpha = 1;
+}
+
+function computePerimeter(){
+  // OUTER perimeter only:
+  // A hex is on the perimeter iff it touches an EMPTY hex that is connected to the OUTSIDE.
+  // Holes (internal empty regions) do NOT count as perimeter.
+  state.perimeterKeys = new Set();
+  if(state.hexes.size === 0) return;
+
+  // Bounds of occupied hexes
+  let minQ=Infinity, maxQ=-Infinity, minR=Infinity, maxR=-Infinity;
+  for(const hx of state.hexes.values()){
+    if(hx.q < minQ) minQ = hx.q;
+    if(hx.q > maxQ) maxQ = hx.q;
+    if(hx.r < minR) minR = hx.r;
+    if(hx.r > maxR) maxR = hx.r;
+  }
+  // Expand bounds so "outside air" can flow around the board
+  minQ -= 2; maxQ += 2;
+  minR -= 2; maxR += 2;
+
+  const occ = state.hexes;      // Map key -> occupied
+  const outside = new Set();    // keys of empty hexes reachable from outside
+  const st = [{q:minQ, r:minR}];
+  outside.add(keyOf(minQ, minR));
+
+  // Flood fill on EMPTY hexes within bounds
+  while(st.length){
+    const cur = st.pop();
+    for(const d of DIRS){
+      const nq = cur.q + d.q;
+      const nr = cur.r + d.r;
+      if(nq < minQ || nq > maxQ || nr < minR || nr > maxR) continue;
+      const nk = keyOf(nq, nr);
+      if(outside.has(nk)) continue;
+      if(occ.has(nk)) continue; // cannot pass through occupied
+      outside.add(nk);
+      st.push({q:nq, r:nr});
+    }
+  }
+
+  // Occupied hex is outer-perimeter if it touches outside-empty
+  for(const [k, hx] of occ.entries()){
+    for(const nb of neighbors(hx.q, hx.r)){
+      const nk = keyOf(nb.q, nb.r);
+      if(!occ.has(nk) && outside.has(nk)){
+        state.perimeterKeys.add(k);
+        break;
+      }
+    }
+  }
+}
+
+
+  // ---------- UI helpers ----------
+  function setPhase(phase){
+  state.phase = phase;
+  phasePill.textContent = phase;
+
+  if(phase === PHASE.NEED_PLAYERS){
+    btnBuildManual.disabled = true;
+    btnFinishBoard.disabled = true;
+    btnStartPlacement.disabled = true;
+    hintText.textContent = "Aloita: Pelaajat → Rakennustila → Valmis lauta → Aloitusasetus.";
+    statusBox.textContent = "Aloita “Pelaajat”.";
+  }
+  else if(phase === PHASE.NEED_BUILD){
+    btnBuildManual.disabled = false;
+    btnFinishBoard.disabled = true;
+    btnStartPlacement.disabled = true;
+    hintText.textContent = "Avaa rakennustila ja asettele laatat käsin (2p=8, 3p=12, 4p=16).";
+    statusBox.textContent = "Pelaajat valittu. Seuraavaksi: Rakennustila (manuaalinen).";
+  }
+  else if(phase === PHASE.BUILD_MANUAL){
+    btnBuildManual.disabled = true;
+    btnStartPlacement.disabled = true;
+    updateBuildStatus();
+  }
+  else if(phase === PHASE.START_PLACEMENT){
+    btnBuildManual.disabled = true;
+    btnFinishBoard.disabled = true;
+    btnStartPlacement.disabled = false;
+
+    const p = state.players[state.currentPlacerPid];
+    hintText.textContent = `Aloitusasetus: ${p.name} (${COLORS[p.colorIndex].name}) – klikkaa reunaruudulta omalta laattaryhmältä.`;
+    statusBox.textContent = `Aloitusasetus.\nVuoro: ${p.name}\nValitse reunaruudulta oma aloituspaikka (pino 16).`;
+	updateActivePlayerUI();
+
+  }
+  else if(phase === PHASE.READY_TO_PLAY){
+    btnBuildManual.disabled = true;
+    btnFinishBoard.disabled = true;
+    btnStartPlacement.disabled = true;
+    hintText.textContent = "Kaikki aloituspinot asetettu. Seuraavaksi lisätään siirtologiikka (jakaminen + liike).";
+    statusBox.textContent = "Peli voi alkaa.\nSeuraava askel: vuorologiikka + pinojen jakaminen ja liikutus suoraan linjaa pitkin.";
+  }
+  else if(phase === PHASE.PLAY){
+  btnBuildManual.disabled = true;
+  btnFinishBoard.disabled = true;
+  const p = state.players[state.turnPid];
+  hintText.textContent = `${p.name}, sinun vuorosi. Klikkaa pino (vähintään 2), sitten kohde.`;
+  statusBox.textContent = `Vuoro: ${p.name}\nValitse pino ja liikuta.`;
+}
+
+  render();
+
+  if(state.phase === PHASE.NEED_BUILD || state.phase === PHASE.BUILD_MANUAL) resizeCanvas();
+}
+
+function renderPlayerList(
+){
+    playerList.innerHTML = "";
+    if(state.players.length === 0){
+      playerList.innerHTML = `<div class="status">Ei pelaajia vielä.</div>`;
+      return;
+    }
+    for(let i=0;i<state.players.length;i++){
+      const p = state.players[i];
+      const c = COLORS[p.colorIndex];
+      const el = document.createElement("div");
+      el.className = "playerItem";
+      const stackPlaced = countStacksByPid(i) > 0;
+      el.innerHTML = `
+        <div class="playerLeft">
+          <div class="dot" style="background:${c.hex}"></div>
+          <div style="min-width:0;">
+            <div class="pName">${escapeHtml(p.name)}</div>
+            <div class="pMeta" style="display:none">Laatat: ${p.tileIds.length} • Aloitus: ${stackPlaced ? "OK" : "—"}</div>
+          </div>
+        </div>
+        <div class="pMeta">${c.name}</div>
+      `;
+      playerList.appendChild(el);
+    }
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
+
+  function countStacksByPid(pid){
+    let n = 0;
+    for(const h of state.hexes.values()){
+      if(h.stack && h.stack.pid === pid) n++;
+    }
+    return n;
+  }
+
+  // ---------- Canvas rendering ----------
+  let view = {
+    size: 26,   // hex radius in px (auto-scaled)
+    ox: 0, oy: 0
+  };
+
+  // Desktop can comfortably use larger hexes; iPad needs tighter fit.
+  const VIEW_ENV = (()=>{
+    const isIPad = /iPad/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isDesktopPointer = window.matchMedia && window.matchMedia("(pointer:fine)").matches && window.matchMedia("(hover:hover)").matches;
+    return { isIPad, isDesktop: !isIPad && isDesktopPointer };
+  })();
+  const VIEW_MIN_SIZE = 12;
+  const VIEW_MAX_SIZE = VIEW_ENV.isDesktop ? 52 : 36;
+
+
+  function resizeCanvas(){
+    const rect = cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.floor(rect.width * dpr));
+    cv.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    computeViewTransform(rect.width, rect.height);
+    render();
+  }
+
+  function computeViewTransform(w,h){
+    // Fit all hexes into the canvas (no scrolling needed).
+    // Uses exact center-bounds + hex radius margin so 4-player (16 tiles) fits on iPad.
+    if(state.hexes.size === 0){
+      view.size = Math.max(14, Math.min(VIEW_MAX_SIZE, Math.min(w,h) * 0.065));
+      view.ox = w/2;
+      view.oy = h/2;
+      return;
+    }
+
+    // bounds of hex CENTERS in "unit size" space (size=1)
+    let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+    for(const hx of state.hexes.values()){
+      const p = axialToPixel(hx.q,hx.r,1);
+      if(p.x < minX) minX = p.x;
+      if(p.x > maxX) maxX = p.x;
+      if(p.y < minY) minY = p.y;
+      if(p.y > maxY) maxY = p.y;
+    }
+
+    // Hex in our renderer is a circle radius=size around the center (see hexCorners()).
+    // So we need +1 radius margin on each side in "unit" space => +2 total.
+    const spanX = (maxX - minX) + 2;
+    const spanY = (maxY - minY) + 2;
+
+    // A bit of padding so outlines / UI don't clip
+    const padPx = Math.max(12, Math.min(w,h) * 0.04);
+    const availW = Math.max(10, w - padPx*2);
+    const availH = Math.max(10, h - padPx*2);
+
+    // Choose size so both width and height fit
+    let size = Math.min(availW / spanX, availH / spanY);
+
+    // Clamp for readability
+    size = Math.max(VIEW_MIN_SIZE, Math.min(VIEW_MAX_SIZE, Math.floor(size)));
+
+    view.size = size;
+
+    // Center board
+    const midAxX = (minX + maxX) / 2;
+    const midAxY = (minY + maxY) / 2;
+    const midPx = axialToPixel(midAxX, midAxY, view.size);
+    view.ox = w/2 - midPx.x;
+    view.oy = h/2 - midPx.y;
+  }
+
+  function hexCorners(cx,cy,size){
+    const pts = [];
+    for(let i=0;i<6;i++){
+      const ang = (Math.PI/180) * (60*i); // flat-top
+      pts.push({x: cx + size*Math.cos(ang), y: cy + size*Math.sin(ang)});
+    }
+    return pts;
+  }
+
+  function drawHex(cx,cy,size, fill, stroke, alpha=1, ctxX=ctx){
+    const pts = hexCorners(cx,cy,size);
+    ctxX.globalAlpha = alpha;
+    ctxX.beginPath();
+    ctxX.moveTo(pts[0].x, pts[0].y);
+    for(let i=1;i<6;i++) ctxX.lineTo(pts[i].x, pts[i].y);
+    ctxX.closePath();
+    ctxX.fillStyle = fill;
+    ctxX.fill();
+    ctxX.lineWidth = 2;
+    ctxX.strokeStyle = stroke;
+    ctxX.stroke();
+    ctxX.globalAlpha = 1;
+  }
+
+  function render(){
+    const rect = cv.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    // background
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = "rgba(0,0,0,.18)";
+    ctx.fillRect(0,0,w,h);
+
+    const connectedSet = (state.phase===PHASE.BUILD_MANUAL || state.phase===PHASE.NEED_BUILD) ? computeConnectedSet() : null;
+
+    if(state.hexes.size === 0){
+      // In build mode, show the ghost tile immediately even before the first tile is placed
+      if(state.phase === PHASE.BUILD_MANUAL && state.build && state.build.hoverAxial){
+        const oq = state.build.hoverAxial.q;
+        const orr = state.build.hoverAxial.r;
+        const cells = tileCellsAt(oq, orr, state.build.rotSteps);
+        // With an empty board, placement is always OK
+        for(const hc of cells){
+          const p = axialToPixel(hc.q,hc.r,view.size);
+          const cx = p.x + view.ox;
+          const cy = p.y + view.oy;
+          drawHex(cx,cy,view.size, "rgba(110,231,255,.10)", "rgba(110,231,255,.55)", 1);
+        }
+        ctx.fillStyle = "rgba(255,255,255,.4)";
+        ctx.font = "600 12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+        ctx.fillText("Klikkaa: aseta ensimmäinen laatta", 14, 18);
+        return;
+      }
+
+      // placeholder
+      ctx.fillStyle = "rgba(255,255,255,.4)";
+      ctx.font = "700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillText("Anna pelaajien nimet.", 14, 18);
+      return;
+    }
+
+    // draw hexes
+    for(const [k, hx] of state.hexes.entries()){
+      const p = axialToPixel(hx.q,hx.r,view.size);
+      const cx = p.x + view.ox;
+      const cy = p.y + view.oy;
+
+      // base color
+      let fill = getComputedStyle(document.documentElement).getPropertyValue("--hexFill").trim() || "#86c95f";
+      let edge = getComputedStyle(document.documentElement).getPropertyValue("--hexEdge").trim() || "#2b3a2f";
+
+      // highlight possible starting choices
+      if(state.phase === PHASE.START_PLACEMENT){
+        const pid = state.currentPlacerPid;
+        const isPerim = state.perimeterKeys.has(k);
+        const isOwnTile = hx.ownerPid === pid;
+        const isEmpty = !hx.stack;
+        if(isPerim && isOwnTile && isEmpty){
+          fill = "#98e46d";
+          edge = "#f7fbff";
+        }else{
+          // dim others a bit
+          drawHex(cx,cy,view.size, fill, edge, 0.75);
+          // then continue to stack drawing
+          drawStackIfAny(cx,cy,hx);
+          continue;
+        }
+      }
+
+      drawHex(cx,cy,view.size, fill, edge, 1);
+
+      // small flowers-ish dots (simple)
+      ctx.fillStyle = "rgba(247,251,255,.85)";
+      ctx.beginPath();
+      ctx.arc(cx-6, cy-4, 1.6, 0, Math.PI*2);
+      ctx.arc(cx+5, cy+2, 1.3, 0, Math.PI*2);
+      ctx.arc(cx+1, cy-8, 1.2, 0, Math.PI*2);
+      ctx.fill();
+
+      drawStackIfAny(cx,cy,hx);
+    }
+// draw "ghost" tile for manual building
+if(state.phase === PHASE.BUILD_MANUAL && state.build.hoverAxial){
+  const oq = state.build.hoverAxial.q;
+  const orr = state.build.hoverAxial.r;
+  const cells = tileCellsAt(oq, orr, state.build.rotSteps);
+  const can = canPlaceTileAt(oq, orr, state.build.rotSteps).ok;
+
+  for(const hc of cells){
+    const p = axialToPixel(hc.q,hc.r,view.size);
+    const cx = p.x + view.ox;
+    const cy = p.y + view.oy;
+    drawHex(cx,cy,view.size, can ? "rgba(110,231,255,.10)" : "rgba(255,110,110,.10)", can ? "rgba(110,231,255,.55)" : "rgba(255,110,110,.55)", 1);
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,.4)";
+  ctx.font = "600 12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText(can ? "Klikkaa: aseta laatta." : "Sijoita pala tyhjään tilaan.", 14, 18);
+}
+
+
+    // outline perimeter subtly
+    if(state.phase === PHASE.START_PLACEMENT){
+      ctx.fillStyle = "rgba(255,255,255,.4)";
+      ctx.font = "600 12px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillText("Mahdolliset aloitusruudut korostettu.", 14, 18);
+    }
+  
+// Move highlights (PLAY)
+if(state.phase === PHASE.PLAY && state.move && state.move.fromKey){
+  const fromHex = state.hexes.get(state.move.fromKey);
+  if(fromHex){
+    const p0 = axialToPixel(fromHex.q, fromHex.r, view.size);
+    const cx0 = p0.x + view.ox;
+    const cy0 = p0.y + view.oy;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.lineWidth = 3;
+    strokeHex(cx0, cy0, view.size, ctx);
+    ctx.restore();
+  }
+  for(const c of state.move.candidates){
+    const hx = state.hexes.get(c.destKey);
+    if(!hx) continue;
+    const p1 = axialToPixel(hx.q, hx.r, view.size);
+    const cx1 = p1.x + view.ox;
+    const cy1 = p1.y + view.oy;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,215,0,.95)";
+    ctx.lineWidth = 4;
+    strokeHex(cx1, cy1, view.size, ctx);
+    ctx.restore();
+  }
+}
+
+updateSplitUI();
+
+  }
+
+  function drawStackIfAny(cx,cy,hx){
+    if(!hx.stack) return;
+    const pid = hx.stack.pid;
+    const c = COLORS[state.players[pid].colorIndex];
+
+    // stack token
+    ctx.beginPath();
+    ctx.arc(cx, cy, view.size*0.44, 0, Math.PI*2);
+    ctx.fillStyle = c.hex;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(0,0,0,.35)";
+    ctx.stroke();
+
+    // count
+    ctx.fillStyle = "rgba(0,0,0,.75)";
+    ctx.font = `800 ${Math.max(12, Math.floor(view.size*0.46))}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(hx.stack.n), cx, cy+1);
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
+  }
+
+  // ---------- Interaction ----------
+function clientToAxial(clientX, clientY){
+  const rect = cv.getBoundingClientRect();
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  return pixelToAxialApprox(x - view.ox, y - view.oy, view.size);
+}
+
+
+  function pickHexAt(clientX, clientY){
+    const rect = cv.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    // approximate axial, then verify by nearest center among existing hexes
+    const ax = pixelToAxialApprox(x - view.ox, y - view.oy, view.size);
+    const k0 = keyOf(ax.q, ax.r);
+    if(state.hexes.has(k0)) return k0;
+
+    // fallback: brute nearest (small set)
+    let bestK = null, bestD = 1e9;
+    for(const [k, hx] of state.hexes.entries()){
+      const p = axialToPixel(hx.q,hx.r,view.size);
+      const cx = p.x + view.ox;
+      const cy = p.y + view.oy;
+      const dx = cx - x, dy = cy - y;
+      const d = dx*dx + dy*dy;
+      if(d < bestD){
+        bestD = d; bestK = k;
+      }
+    }
+    // only accept if close enough
+    if(bestK && bestD <= (view.size*0.85)*(view.size*0.85)) return bestK;
+    return null;
+  }
+
+
+function rayLastEmpty(q, r, dir){
+  let cq=q, cr=r;
+  let last = null;
+  while(true){
+    const nq = cq + DIRS[dir].q;
+    const nr = cr + DIRS[dir].r;
+    const nk = keyOf(nq,nr);
+    if(!state.hexes.has(nk)) break;
+    const nh = state.hexes.get(nk);
+    if(nh.stack) break;
+    last = {q:nq, r:nr};
+    cq=nq; cr=nr;
+  }
+  return last;
+}
+
+function buildMoveCandidates(fromHex){
+  const out = [];
+  for(let dir=0; dir<6; dir++){
+    const last = rayLastEmpty(fromHex.q, fromHex.r, dir);
+    if(last){
+      out.push({ dir, destKey: keyOf(last.q,last.r) });
+    }
+  }
+  return out;
+}
+
+
+
+
+function onBoardClick(ev){
+  // If game has ended, ignore board interaction (buttons still work)
+  if(state.gameOver) return;
+  // ---------- BUILD (manual): place/remove tiles ----------
+  if(state.phase === PHASE.BUILD_MANUAL){
+    const ax = clientToAxial(ev.clientX, ev.clientY);
+    state.build.hoverAxial = ax;
+
+    const k = keyOf(ax.q, ax.r);
+    if(state.hexes.has(k)){
+      const hx = state.hexes.get(k);
+      removeTileById(hx.tileId);
+      return;
+    }
+
+    placeCurrentTileAt(ax.q, ax.r);
+    return;
+  }
+
+  // ---------- START PLACEMENT: starting stacks on OUTER perimeter ----------
+  if(state.phase === PHASE.START_PLACEMENT){
+    const hit = pickHexAt(ev.clientX, ev.clientY);
+    if(!hit) return;
+
+    // pickHexAt may return either {k:"q,r"} or directly "q,r"
+    const k = (typeof hit === "string") ? hit : hit.k;
+    if(!k) return;
+
+    const hx = state.hexes.get(k);
+    if(!hx) return;
+
+    // Only rule: OUTER perimeter (holes excluded) + empty
+    if(!state.perimeterKeys.has(k) || hx.stack){
+      flashStatus("Valitse korostettu ulkoreunan aloitusruutu (reiän reunat eivät kelpaa).", "warn");
+      return;
+    }
+
+    const pid = state.currentPlacerPid;
+
+    // place starting stack 16
+    hx.stack = { pid, n: 16 };
+
+    // next player / start game
+    state.currentPlacerPid++;
+    renderPlayerList();
+
+    if(state.currentPlacerPid >= state.players.length){
+      state.turnPid = 0;
+      clearMoveSelection();
+      setPhase(PHASE.PLAY);
+
+      const p = state.players[state.turnPid];
+      hintText.textContent = `${p.name}, sinun vuorosi. Klikkaa oma pino, sitten kohde.`;
+      statusBox.textContent = `Vuoro: ${p.name}\nValitse oma pino (vähintään 2) ja liikuta.`;
+	  updateActivePlayerUI();
+      render();
+      return;
+    }else{
+      const p = state.players[state.currentPlacerPid];
+      hintText.textContent = `Aloitusasetus: ${p.name} – klikkaa ulkoreunan ruutua.`;
+      statusBox.textContent = `Aloitusasetus.\nVuoro: ${p.name}\nValitse ulkoreunan aloitusruutu (pino 16).`;
+	  updateActivePlayerUI();
+      render();
+      return;
+    }
+  }
+
+  // ---------- PLAY: moves ----------
+  if(state.phase === PHASE.PLAY){
+    const hit = pickHexAt(ev.clientX, ev.clientY);
+    if(!hit) return;
+
+    const k = (typeof hit === "string") ? hit : hit.k;
+    if(!k) return;
+
+    const hx = state.hexes.get(k);
+    if(!hx) return;
+
+    // If currently selecting a move
+    if(state.move && state.move.fromKey){
+      // click same source cancels
+      if(k === state.move.fromKey){
+        clearMoveSelection();
+        return;
+      }
+
+      // click a valid destination -> execute
+      const cand = state.move.candidates.find(c=>c.destKey===k);
+      if(cand){
+        const fromHex = state.hexes.get(state.move.fromKey);
+        const st = fromHex.stack;
+
+        const moveK = Math.max(1, Math.min(st.n - 1, state.move.k || 1));
+
+        // execute (destination guaranteed empty by candidate gen)
+        const dst = state.hexes.get(k);
+        dst.stack = { pid: st.pid, n: moveK };
+        st.n -= moveK;
+        if(st.n <= 0) fromHex.stack = null;
+
+        clearMoveSelection();
+
+        // next player's turn
+        if(!advanceTurn()){
+          const msg = gameOverText();
+          setGameOver(msg);
+          return;
+        }
+
+        flashStatus(`Vuorossa: ${state.players[state.turnPid].name}`, "ok");
+		updateActivePlayerUI();
+
+        render();
+        return;
+      }
+
+      // otherwise ignore (keep selection)
+      return;
+    }
+
+    // No selection yet: allow selecting own stack
+    if(hx.stack && hx.stack.pid === state.turnPid && hx.stack.n >= 2){
+      const cands = buildMoveCandidates(hx);
+      if(cands.length === 0){
+        flashStatus("Tällä pinolla ei ole siirtoja.", "warn");
+        return;
+      }
+      state.move = {
+        fromKey: k,
+        k: Math.max(1, Math.floor(hx.stack.n / 2)),
+        candidates: cands
+      };
+      render();
+      return;
+    }
+
+    return;
+  }
+}
+
+
+
+  function flashStatus(msg, kind){
+    if(state.gameOver) return;
+    const prefix = (kind==="bad") ? "❌ " : (kind==="warn" ? "⚠️ " : "✅ ");
+    statusBox.textContent = prefix + msg;
+    setTimeout(()=>{
+      // restore phase status
+      if(state.phase === PHASE.START_PLACEMENT){
+        const p = state.players[state.currentPlacerPid];
+        statusBox.textContent = `Aloitusasetus.\nVuoro: ${p.name}\nValitse reunaruudulta oma aloituspaikka (pino 16).`;
+		updateActivePlayerUI();
+
+      }else if(state.phase === PHASE.NEED_BUILD){
+        statusBox.textContent = "Pelaajat valittu. Seuraavaksi rakenna pelilauta.";
+      }else if(state.phase === PHASE.NEED_PLAYERS){
+        statusBox.textContent = "Aloita “Pelaajat”.";
+      }else if(state.phase === PHASE.READY_TO_PLAY){
+        statusBox.textContent = "Peli voi alkaa.\nSeuraava askel: vuorologiikka + pinojen jakaminen ja liikutus suoraan linjaa pitkin.";
+      }
+    }, 1200);
+  }
+
+  // ---------- Modal ----------
+  function openModal(){
+    state.gameOver = false;
+    state.gameOverMsg = "";
+
+    modalBack.classList.add("show");
+    // prefill
+    p1.value = state.players[0]?.name || "";
+    p2.value = state.players[1]?.name || "";
+    p3.value = state.players[2]?.name || "";
+    p4.value = state.players[3]?.name || "";
+    setTimeout(()=>p1.focus(), 0);
+  }
+  function closeModal(){
+    modalBack.classList.remove("show");
+  }
+
+  // ---------- Players ----------
+  function savePlayersFromInputs(){
+    state.gameOver = false;
+    state.gameOverMsg = "";
+
+    const names = [p1.value, p2.value, p3.value, p4.value].map(s=>String(s||"").trim()).filter((s, idx, arr)=>{
+      // Keep order: stop at first empty after 2 required?
+      return true;
+    });
+
+    // enforce rule: tyhjä on loppu
+    const finalNames = [];
+    for(const nm of [p1.value, p2.value, p3.value, p4.value]){
+      const t = String(nm||"").trim();
+      if(t === ""){
+        // stop list, but allow first two to be required later
+        break;
+      }
+      finalNames.push(t);
+    }
+
+    if(finalNames.length < 2){
+      flashModalNote("Anna vähintään 2 pelaajaa (P1 ja P2).");
+      return false;
+    }
+
+    state.players = finalNames.slice(0,4).map((name, idx)=>({
+      id: idx,
+      name,
+      colorIndex: idx,
+      tileIds: []
+    }));
+
+    // assign 4 tiles per player (Battle Sheep): total used tiles = players * 4
+const totalTiles = Math.min(16, Math.max(8, state.players.length * 4)); // 2p=8, 3p=12, 4p=16
+state.build = state.build || {};
+state.build.totalTiles = totalTiles;
+
+for(let i=0;i<state.players.length;i++){
+  state.players[i].tileIds = [];
+}
+for(let t=0; t<totalTiles; t++){
+  const pid = Math.floor(t/4); // 0..players-1
+  state.players[pid].tileIds.push(t);
+}
+
+    // reset board state because players changed
+    state.tiles = [];
+    state.hexes = new Map();
+    state.perimeterKeys = new Set();
+    state.currentPlacerPid = 0;
+
+    renderPlayerList();
+    // Auto-advance: go straight into manual build (no extra button presses)
+    buildBoardManualInit();
+    return true;
+  }
+
+  function flashModalNote(text){
+    // quick inline note using statusBox (simple)
+    statusBox.textContent = "⚠️ " + text;
+  }
+
+
+  
+// ---------- Move / Split UI ----------
+
+
+
+function clearMoveSelection(){
+  state.move = { fromKey:null, k:1, candidates:[] };
+  render(); // also hides slider via updateSplitUI
+}
+
+
+function computeScores(){
+  // Battle Sheep: pisteet = hallittujen heksien määrä (eli pinot/ruudut joilla pelaajan väri)
+  const scores = state.players.map(p=>({ pid:p.id, name:p.name, score:0 }));
+
+  for(const h of state.hexes.values()){
+    if(h.stack && typeof h.stack.pid === "number"){
+      const pid = h.stack.pid;
+      if(scores[pid]) scores[pid].score += 1;
+    }
+  }
+
+  // suurin ensin
+  scores.sort((a,b)=>b.score-a.score);
+  return scores;
+}
+
+function gameOverText(){
+  const scores = computeScores();
+  const lines = [];
+  lines.push("Peli päättyi – kenelläkään ei ole siirtoja.");
+  lines.push("");
+  lines.push("Pisteet:");
+  for(const s of scores){
+    lines.push(`${s.name}: ${s.score}`);
+  }
+  if(scores.length){
+    const top = scores[0].score;
+    const winners = scores.filter(x=>x.score===top).map(x=>x.name);
+    lines.push("");
+    lines.push(winners.length>1 ? `Voittajat: ${winners.join(", ")}` : `Voittaja: ${winners[0]}`);
+  }
+  return lines.join("\n");
+}
+
+function setGameOver(msg){
+  state.gameOver = true;
+  state.gameOverMsg = msg;
+  // Freeze UI messages
+  statusBox.textContent = msg;
+  hintText.textContent = msg;
+  // Clear any pending move UI
+  clearMoveSelection();
+  render();
+}
+
+
+
+function updateSplitUI(){
+  if(!uiOverlay) return;
+  uiOverlay.innerHTML = "";
+
+  if(state.phase !== PHASE.PLAY) return;
+  if(!state.move || !state.move.fromKey) return;
+
+  const fromHex = state.hexes.get(state.move.fromKey);
+  if(!fromHex || !fromHex.stack) return;
+
+  const st = fromHex.stack;
+  const maxK = Math.max(1, st.n - 1);
+  const k = Math.max(1, Math.min(maxK, state.move.k||1));
+  state.move.k = k;
+
+  const p = axialToPixel(fromHex.q, fromHex.r, view.size);
+  const cx = p.x + view.ox;
+  const cy = p.y + view.oy + view.size * 0.85;
+
+  const wrap = document.createElement("div");
+  wrap.className = "splitCtrl";
+  wrap.style.left = cx + "px";
+  wrap.style.top = cy + "px";
+  wrap.innerHTML = `
+    <div class="row">
+      <span>Jaa</span>
+      <strong id="splitVal">${k}</strong>
+    </div>
+    <input id="splitRange" type="range" min="1" max="${maxK}" value="${k}" step="1" />
+  `;
+
+  const rng = wrap.querySelector("#splitRange");
+  const val = wrap.querySelector("#splitVal");
+  rng.addEventListener("input", ()=>{
+    state.move.k = parseInt(rng.value, 10);
+    val.textContent = String(state.move.k);
+  });
+
+  uiOverlay.appendChild(wrap);
+}
+
+function playerHasAnyMove(pid){
+  for(const h of state.hexes.values()){
+    if(h.stack && h.stack.pid===pid && h.stack.n>=2){
+      for(let dir=0; dir<6; dir++){
+        if(rayLastEmpty(h.q,h.r,dir)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function advanceTurn(){
+  const P = state.players.length;
+  for(let i=1; i<=P; i++){
+    const np = (state.turnPid + i) % P;
+    if(playerHasAnyMove(np)){
+      state.turnPid = np;
+      const p = state.players[state.turnPid];
+      hintText.textContent = `${p.name}, sinun vuorosi. Klikkaa pino, sitten kohde.`;
+      statusBox.textContent = `Vuoro: ${p.name}\nValitse pino ja liikuta.`;
+      return true;
+    }
+  }
+  return false;
+}
+
+// ---------- Buttons ----------
+  btnSetup.addEventListener("click", openModal);
+  btnCloseModal.addEventListener("click", closeModal);
+  modalBack.addEventListener("click", (e)=>{
+    if(e.target === modalBack) closeModal();
+  });
+
+  btnSavePlayers.addEventListener("click", ()=>{
+    if(savePlayersFromInputs()){
+      closeModal();
+    }
+  });
+  btnClearPlayers.addEventListener("click", ()=>{
+    p1.value=""; p2.value=""; p3.value=""; p4.value="";
+    p1.focus();
+  });
+btnBuildManual.addEventListener("click", ()=>{
+  buildBoardManualInit();
+});
+
+
+
+function finishBoardAndStartPlacement(){
+  // Preconditions: build phase, all tiles placed, board connected
+  if(state.phase !== PHASE.BUILD_MANUAL) return false;
+
+  const total = (state.build && state.build.totalTiles)
+    ? state.build.totalTiles
+    : Math.min(16, Math.max(8, (state.players.length||0) * 4));
+
+  if(state.build.placedTiles.length !== total || !isBoardConnected()){
+    return false;
+  }
+
+  // Each player owns 4 tiles. Ownership is based on placement order.
+  for(let i=0;i<state.players.length;i++) state.players[i].tileIds = [];
+
+  const tilesSorted = state.build.placedTiles.slice().sort((a,b)=>a.placedIndex-b.placedIndex);
+  const tileOwner = new Map(); // tileId -> pid
+
+  for(let i=0;i<tilesSorted.length;i++){
+    const pid = Math.min(state.players.length-1, Math.floor(i/4));
+    tileOwner.set(tilesSorted[i].id, pid);
+    state.players[pid].tileIds.push(tilesSorted[i].id);
+  }
+
+  // Apply ownerPid to each hex
+  for(const hx of state.hexes.values()){
+    hx.ownerPid = tileOwner.get(hx.tileId) ?? null;
+  }
+
+  // clear any old stacks
+  for(const h of state.hexes.values()) h.stack = null;
+  state.currentPlacerPid = 0;
+
+  computePerimeter();
+  renderPlayerList();
+  setPhase(PHASE.START_PLACEMENT);
+  return true;
+}
+
+btnFinishBoard.addEventListener("click", ()=>{
+  if(!finishBoardAndStartPlacement()){
+    flashStatus("Lauta ei ole vielä valmis / yhtenäinen.", "warn");
+  }
+});
+
+// Rotate the (single) tile by clicking the preview
+tilePreview.addEventListener("click", ()=>{
+  if(state.phase !== PHASE.BUILD_MANUAL) return;
+  state.build.rotSteps = (state.build.rotSteps + 1) % 6;
+  drawTilePreview();
+  render();
+});
+
+
+
+  btnStartPlacement.addEventListener("click", ()=>{
+    if(state.hexes.size === 0){
+      flashStatus("Rakenna pelilauta ensin.", "warn");
+      return;
+    }
+    // clear any old stacks
+    for(const h of state.hexes.values()) h.stack = null;
+    state.currentPlacerPid = 0;
+    renderPlayerList();
+    setPhase(PHASE.START_PLACEMENT);
+  });
+
+  btnReset.addEventListener("click", ()=>{
+    // full reset
+    state = {
+      phase: PHASE.NEED_PLAYERS,
+      gameOver: false,
+      gameOverMsg: "",
+      players: [],
+      tiles: [],
+      hexes: new Map(),
+      perimeterKeys: new Set(),
+      currentPlacerPid: 0,
+    build: { rotSteps: 0, hoverAxial: null, remainingTiles: 16, nextTileId: 0, placedTiles: [] }
+  };
+    renderPlayerList();
+    setPhase(PHASE.NEED_PLAYERS);
+    render();
+    // Auto-advance: ask players again after reset
+    openModal();
+  });
+
+  // Board interaction (Pointer Events)
+  // NOTE: Avoid using both click + touchend on iPad (it double-fires).
+  // We handle everything via pointer events and prevent default to stop page pan/zoom + text selection.
+  function onPointerDown(e){
+    if(state.gameOver) return;
+    if(!e.isPrimary) return;
+    e.preventDefault();
+    onBoardClick(e);
+  }
+  function onPointerMove(e){
+    if(state.phase !== PHASE.BUILD_MANUAL) return;
+    if(!e.isPrimary) return;
+    // While building, show ghost tile under the finger / cursor
+    if(e.pointerType === "touch") e.preventDefault();
+    state.build.hoverAxial = clientToAxial(e.clientX, e.clientY);
+    render();
+  }
+
+  cv.addEventListener("pointerdown", onPointerDown, {passive:false});
+  cv.addEventListener("pointermove", onPointerMove, {passive:false});
+
+  // ---------- init ----------
+  function init(){
+    renderPlayerList();
+    setPhase(PHASE.NEED_PLAYERS);
+    // Auto-advance: ask players immediately
+    openModal();
+
+    resizeCanvas();
+    drawTilePreview();
+  }
+  window.addEventListener("resize", resizeCanvas);
+
+  init();
+
+})();
+</script>
+</body>
+</html>
