@@ -1,5 +1,5 @@
 /* Minimal SW: cache app shell */
-const CACHE = "bs-v1";
+const CACHE = "bs-v3";
 const ASSETS = [
   "./",
   "./index.html",
